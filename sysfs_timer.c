@@ -13,14 +13,17 @@ static ssize_t storeFile(struct kobject *kobj, struct kobj_attribute *attr,
 			const char *buf, size_t count)
 {
 	convert(buf, count, &timerNum);
+	printk("Timer will work %d times\n", timerNum);
 	mod_timer(&my_timer, jiffies + msecs_to_jiffies(1000));
 	return count;
 }
 
 void timer_callback(unsigned long data)
 {
+	printk("Im here\n");
 	if (timerNum > 0) {
-		printk("The timer is still working: %ld", data);
+		printk("The timer is still working: %d\n", timerNum);
+		mod_timer(&my_timer, jiffies + msecs_to_jiffies(1000));
 		--timerNum;
 	}
 }
