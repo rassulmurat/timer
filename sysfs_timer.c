@@ -4,7 +4,6 @@
 
 static ssize_t showFile(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	printk("TimerNum: %d\n", timerNum);
 	sprintf(buf,"%d", timerNum);
 
 	return 0;
@@ -13,10 +12,17 @@ static ssize_t showFile(struct kobject *kobj, struct kobj_attribute *attr, char 
 static ssize_t storeFile(struct kobject *kobj, struct kobj_attribute *attr, 
 			const char *buf, size_t count)
 {
-	printk("Im trying to write\n");
 	convert(buf, count, &timerNum);
-	// printk("Count: %d\n", count);
+	mod_timer(&my_timer, jiffies + msecs_to_jiffies(1000));
 	return count;
+}
+
+void timer_callback(unsigned long data)
+{
+	if (timerNum > 0) {
+		printk("The timer is still working: %ld", data);
+		--timerNum;
+	}
 }
 
 int convert(const char *buf, int count, int *res)
@@ -24,7 +30,6 @@ int convert(const char *buf, int count, int *res)
     int i = 0;
     int tmp;
     int sum = 0;
-    printk("Im converting\n");
     while (i < count - 1) {
         int power = count - 2 - i;
         int rlpwr = 1;
@@ -37,7 +42,6 @@ int convert(const char *buf, int count, int *res)
         ++i;
     }
     *res = sum;
-    printk("Sum: %d\n", sum);
     return 0;
 }
 
@@ -63,6 +67,7 @@ static int __init timer_init(void)
 		printk("ERROR: Could not create file");
 		return -ENOMEM;
 	}
+	setup_timer(&my_timer, timer_callback, 0);
 	return 0;
 }
 
@@ -71,6 +76,7 @@ static void __exit timer_clean(void)
 	sysfs_remove_file(kobj, &kobjAttr.attr);
 	kobject_del(kobj);
 	kobject_put(kobj);
+	del_timer(&my_timer);
 }
 
 module_init(timer_init);
